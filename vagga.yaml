@@ -46,7 +46,7 @@ containers:
       <<: *local_volumes
 
   # Production containers
-  app-production:
+  app-prod:
     setup:
     - !Container app
     - !*Unpack
