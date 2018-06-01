@@ -6,10 +6,10 @@ _templates:
   - &production_stuff
     - !EnsureDir /lithos
     - !Copy
-      source: /work/lithos/production
+      source: /work/lithos/prod
       path: /lithos
     - !Copy
-      source: /work/config/production
+      source: /work/config/prod
       path: /config
   - &host_resolution
     - !EnsureDir /state
