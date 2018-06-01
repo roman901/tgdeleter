@@ -1,0 +1,79 @@
+_templates:
+  local_volumes: &local_volumes
+    /config: !BindRO /work/config/local
+
+  snippets:
+  - &production_stuff
+    - !EnsureDir /lithos
+    - !Copy
+      source: /work/lithos/production
+      path: /lithos
+    - !Copy
+      source: /work/config/production
+      path: /config
+  - &host_resolution
+    - !EnsureDir /state
+    - !Sh |
+        /bin/ln -sfn /state/hosts /etc/hosts
+        /bin/ln -sfn /state/resolv.conf /etc/resolv.conf
+
+containers:
+  _base_alpine:
+    setup:
+    - !Alpine v3.7
+    - !AlpineRepo {branch: v3.7, repo: community, tag: community}
+    - !EnsureDir /config
+    - !EnsureDir /log
+    - !Sh "chmod +r /bin/bbsuid"
+
+  python-freezer:
+    setup:
+    - !Container _base_alpine
+    - !PipConfig
+      dependencies: true
+    - !Py3Install
+      - "import_string"
+      - "python-telegram-bot"
+    - !Sh python3 -m pip freeze > requirements.txt
+
+  app:
+    setup:
+    - !Container _base_alpine
+    - !PipConfig
+      dependencies: true
+    - !Py3Requirements "requirements.txt"
+    volumes:
+      <<: *local_volumes
+
+  # Production containers
+  app-production:
+    setup:
+    - !Container app
+    - !*Unpack
+      - *production_stuff
+      - *host_resolution
+    - !EnsureDir /app
+    - !Copy
+      source: /work
+      path: /app
+      include-regex: ^(tgdeleter)/*
+    - !Copy
+      source: /work/app.py
+      path: /app/app.py
+    - !Copy
+      source: /work/production_config.py
+      path: /app/production_config.py
+    resolv-conf-path: /state/resolv.conf
+    hosts-file-path: /state/hosts
+
+commands:
+  app: &app !Command
+    container: app
+    description: Run tgdeleter
+    run: python3 app.py
+
+  run: !Supervise
+    description: Run full server stack
+    kill-unresponsive-after: 5
+    children:
+      app: *app
