@@ -2,27 +2,12 @@ user-id: 1
 group-id: 1
 volumes:
   /state: !Statedir {}
-  /storage: !Persistent
-    path: /storage/app
-    mkdir: true
-    mode: 0o700
-    user: 1
-    group: 1
 fileno-limit: 50ki
 memory-limit: 2Gi
 cpu-shares: 1024
 workdir: /app
-stdout-stderr-file: /storage/app.log
 environ:
-  CS_MASTER_CONFIG: production_config.ProductionConfig
-  CS_LISTEN_FDS: 1
-  CANTAL_PATH: /state/cantal
-tcp-ports:
-  8080:
-    fd: 3
-    host: 127.0.0.1
-    listen-backlog: 10000
-    reuse-addr: true
+  TGDELETER_CONFIG: production_config.ProductionConfig
 
 executable: /usr/bin/python3
-arguments: [quest_app.py]
+arguments: [app.py]
